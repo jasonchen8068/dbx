@@ -67,6 +67,56 @@ describe("selectionMatchOccurrences", () => {
   });
 });
 
+describe("deferred selection match highlights", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    document.body.replaceChildren();
+  });
+
+  it("rebuilds highlights only after pointer selection updates settle", async () => {
+    const view = createView("foo one\nfoo two\nfoo three");
+
+    view.dispatch({ selection: { anchor: 0, head: 3 }, userEvent: "select.pointer" });
+    expect(view.dom.querySelectorAll(".cm-selectionMatch")).toHaveLength(0);
+
+    // Later pointer updates must not rebuild the marks mid-drag.
+    view.dispatch({ selection: { anchor: 0, head: 4 }, userEvent: "select.pointer" });
+    await vi.advanceTimersByTimeAsync(SELECTION_MATCH_UPDATE_DELAY_MS - 1);
+    expect(view.dom.querySelectorAll(".cm-selectionMatch")).toHaveLength(0);
+
+    await vi.advanceTimersByTimeAsync(1);
+    // The selected occurrence itself keeps the editor's selection background.
+    expect(view.dom.querySelectorAll(".cm-selectionMatch")).toHaveLength(2);
+    view.destroy();
+  });
+
+  it("clears highlights as soon as the selection collapses", async () => {
+    const view = createView("foo one\nfoo two\nfoo three");
+
+    view.dispatch({ selection: { anchor: 0, head: 3 }, userEvent: "select.pointer" });
+    await vi.advanceTimersByTimeAsync(SELECTION_MATCH_UPDATE_DELAY_MS);
+    expect(view.dom.querySelectorAll(".cm-selectionMatch")).toHaveLength(2);
+
+    view.dispatch({ selection: { anchor: 3 } });
+    expect(view.dom.querySelectorAll(".cm-selectionMatch")).toHaveLength(0);
+    view.destroy();
+  });
+
+  it("drops pending work when the view is destroyed", async () => {
+    const view = createView("foo one\nfoo two\nfoo three");
+
+    view.dispatch({ selection: { anchor: 0, head: 3 }, userEvent: "select.pointer" });
+    view.destroy();
+
+    await vi.advanceTimersByTimeAsync(SELECTION_MATCH_UPDATE_DELAY_MS + 40);
+    expect(document.querySelectorAll(".cm-selectionMatch")).toHaveLength(0);
+  });
+});
+
 describe("SelectionMatchMarkerScan", () => {
   it("finds a match that crosses a scan chunk boundary exactly once", () => {
     const prefix = "x".repeat(SELECTION_MATCH_SCAN_CHUNK_LENGTH - 2);
