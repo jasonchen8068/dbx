@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { startsQueryEditorRectangularSelection, startsQueryEditorSelectionDrag, usesQueryEditorObjectNavigationModifier } from "@/lib/editor/queryEditorPointerSelection";
+import { startsQueryEditorRectangularSelection, startsQueryEditorSelectionDrag, startsQueryEditorSelectionMoveDrag, usesQueryEditorObjectNavigationModifier } from "@/lib/editor/queryEditorPointerSelection";
 
 describe("query editor pointer selection", () => {
   it("starts rectangular selection for Alt+left drag", () => {
@@ -15,11 +15,23 @@ describe("query editor pointer selection", () => {
   });
 
   it("leaves multi-click and Shift selection gestures to CodeMirror", () => {
-    expect(startsQueryEditorSelectionDrag({ detail: 0, shiftKey: false })).toBe(true);
-    expect(startsQueryEditorSelectionDrag({ detail: 1, shiftKey: false })).toBe(true);
-    expect(startsQueryEditorSelectionDrag({ detail: 1, shiftKey: true })).toBe(false);
-    expect(startsQueryEditorSelectionDrag({ detail: 2, shiftKey: false })).toBe(false);
-    expect(startsQueryEditorSelectionDrag({ detail: 3, shiftKey: false })).toBe(false);
+    expect(startsQueryEditorSelectionDrag({ detail: 0, shiftKey: false, ctrlKey: false, metaKey: false })).toBe(true);
+    expect(startsQueryEditorSelectionDrag({ detail: 1, shiftKey: false, ctrlKey: false, metaKey: false })).toBe(true);
+    expect(startsQueryEditorSelectionDrag({ detail: 1, shiftKey: true, ctrlKey: false, metaKey: false })).toBe(false);
+    expect(startsQueryEditorSelectionDrag({ detail: 2, shiftKey: false, ctrlKey: false, metaKey: false })).toBe(false);
+    expect(startsQueryEditorSelectionDrag({ detail: 3, shiftKey: false, ctrlKey: false, metaKey: false })).toBe(false);
+  });
+
+  it("takes over the drag only when Cmd or Ctrl is held", () => {
+    expect(startsQueryEditorSelectionMoveDrag({ detail: 1, shiftKey: false, ctrlKey: true, metaKey: false })).toBe(true);
+    expect(startsQueryEditorSelectionMoveDrag({ detail: 1, shiftKey: false, ctrlKey: false, metaKey: true })).toBe(true);
+    expect(startsQueryEditorSelectionMoveDrag({ detail: 1, shiftKey: true, ctrlKey: true, metaKey: false })).toBe(true);
+  });
+
+  it("leaves plain presses inside a selection to CodeMirror", () => {
+    expect(startsQueryEditorSelectionMoveDrag({ detail: 1, shiftKey: false, ctrlKey: false, metaKey: false })).toBe(false);
+    expect(startsQueryEditorSelectionMoveDrag({ detail: 0, shiftKey: false, ctrlKey: false, metaKey: false })).toBe(false);
+    expect(startsQueryEditorSelectionMoveDrag({ detail: 2, shiftKey: false, ctrlKey: true, metaKey: false })).toBe(false);
   });
 
   it("uses Cmd or Ctrl without Alt for object navigation", () => {

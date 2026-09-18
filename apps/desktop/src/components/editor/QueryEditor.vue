@@ -178,7 +178,7 @@ import { focusEditorView } from "@/lib/editor/queryEditorFocus";
 import { stabilizeUnfocusedQueryEditorPointerDown } from "@/lib/editor/queryEditorUnfocusedPointer";
 import { createDbxCodeMirrorSqlDialect, type CodeMirrorSqlDialectName } from "@/lib/editor/codemirrorSqlDialect";
 import { sqlSemanticTableNameSpansForSyntaxTree } from "@/lib/editor/codemirrorSqlSemanticHighlight";
-import { startsQueryEditorRectangularSelection, startsQueryEditorSelectionDrag, usesQueryEditorObjectNavigationModifier } from "@/lib/editor/queryEditorPointerSelection";
+import { startsQueryEditorRectangularSelection, startsQueryEditorSelectionMoveDrag, usesQueryEditorObjectNavigationModifier } from "@/lib/editor/queryEditorPointerSelection";
 import { LARGE_PASTE_HISTORY_USER_EVENT, normalizeQueryEditorPasteText, recoverableNativePasteSuffix, shouldRecoverLargeTauriPaste } from "@/lib/editor/queryEditorLargePaste";
 import { computePasteCaretResyncTarget } from "@/lib/editor/queryEditorPasteCaretResync";
 import { queryEditorCommentTokens, queryEditorLineCommentToken, queryEditorWordLanguageData } from "@/lib/editor/queryEditorLineComment";
@@ -1585,7 +1585,8 @@ function selectedRangeAtPointer(currentView: EditorViewType, event: MouseEvent) 
 function moveOrCopySelectionToPointer(currentView: EditorViewType, selection: { from: number; to: number; text: string }, event: MouseEvent) {
   const dropPos = currentView.posAtCoords({ x: event.clientX, y: event.clientY }, false);
   if (dropPos == null) return false;
-  const copy = event.ctrlKey || event.metaKey;
+  // Ctrl/Cmd drags a copy; adding Shift moves the original instead.
+  const copy = !event.shiftKey;
   if (!copy && dropPos >= selection.from && dropPos <= selection.to) return true;
 
   const insert = { from: dropPos, insert: selection.text };
@@ -1641,7 +1642,7 @@ function updateEditorSelectionDropCursor(currentView: EditorViewType, event: Mou
 }
 
 function startEditorSelectionDrag(currentView: EditorViewType, event: MouseEvent): boolean {
-  if (!startsQueryEditorSelectionDrag(event)) return false;
+  if (!startsQueryEditorSelectionMoveDrag(event)) return false;
 
   const selection = selectedRangeAtPointer(currentView, event);
   if (!selection) return false;
