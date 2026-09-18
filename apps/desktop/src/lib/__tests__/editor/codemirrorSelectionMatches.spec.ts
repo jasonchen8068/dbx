@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 
+import { indentMore } from "@codemirror/commands";
 import { EditorSelection, EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -103,6 +104,20 @@ describe("deferred selection match highlights", () => {
 
     view.dispatch({ selection: { anchor: 3 } });
     expect(view.dom.querySelectorAll(".cm-selectionMatch")).toHaveLength(0);
+    view.destroy();
+  });
+
+  it("keeps existing highlights aligned while a document rescan is pending", async () => {
+    const view = createView("foo one\nfoo two\nfoo three", EditorSelection.range(0, 3));
+
+    await vi.advanceTimersByTimeAsync(SELECTION_MATCH_UPDATE_DELAY_MS);
+    expect(Array.from(view.dom.querySelectorAll(".cm-selectionMatch"), (node) => node.textContent)).toEqual(["foo", "foo"]);
+
+    expect(indentMore(view)).toBe(true);
+    expect(Array.from(view.dom.querySelectorAll(".cm-selectionMatch"), (node) => node.textContent)).toEqual(["foo", "foo"]);
+
+    await vi.advanceTimersByTimeAsync(SELECTION_MATCH_UPDATE_DELAY_MS);
+    expect(Array.from(view.dom.querySelectorAll(".cm-selectionMatch"), (node) => node.textContent)).toEqual(["foo", "foo"]);
     view.destroy();
   });
 

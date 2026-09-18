@@ -237,6 +237,7 @@ class DeferredSelectionMatchHighlighter {
       return;
     }
 
+    if (update.docChanged) this.decorations = this.decorations.map(update.changes);
     if (update.docChanged || update.selectionSet || update.viewportChanged || update.geometryChanged) this.scheduleUpdate();
   }
 
