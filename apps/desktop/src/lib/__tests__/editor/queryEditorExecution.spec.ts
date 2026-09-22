@@ -33,7 +33,8 @@ describe("QueryEditor execution routing", () => {
     expect(queryEditorSource).toContain("requestExecute();\n  focusEditor();");
     expect(queryEditorSource).toContain("function executeSqlStatementFromGutter");
     expect(queryEditorSource).toContain("const hasSelectedSql = !selection.empty && currentView.state.sliceDoc(selection.from, selection.to).trim().length > 0;");
-    expect(queryEditorSource).toContain("const executionSnapshot = hasSelectedSql ? sqlExecutionSnapshotFromView(currentView) : sqlExecutionSnapshotForRange(currentView, statementRange);");
+    expect(queryEditorSource).toContain("const selectionOverlapsStatement = hasSelectedSql && selection.from < statementRange.to && statementRange.from < selection.to;");
+    expect(queryEditorSource).toContain("const executionSnapshot = selectionOverlapsStatement ? sqlExecutionSnapshotFromView(currentView) : sqlExecutionSnapshotForRange(currentView, statementRange);");
     expect(queryEditorSource).toContain("emitExecutionRequest({ ...executionSnapshot, editorViewportRequestId })");
   });
 
